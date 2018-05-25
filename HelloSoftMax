@@ -1,0 +1,44 @@
+import tensorflow as tf
+
+from tensorflow.examples.tutorials.mnist import input_data
+
+mnist = input_data.read_data_sets("./data", one_hot=True)
+
+W = tf.Variable(tf.zeros([784, 10]))
+b = tf.Variable(tf.zeros([10]))
+
+_X = tf.placeholder("float", [None, 784])
+_Y = tf.placeholder("float", [None, 10])
+
+tmp = tf.matmul(_X, W) + b
+
+y = tf.nn.softmax(tmp)
+
+Loss = -tf.reduce_sum(_Y * tf.log(y))
+
+train_step = tf.train.GradientDescentOptimizer(1e-2).minimize(Loss)
+
+sess = tf.Session()
+
+sess.run(tf.global_variables_initializer())
+
+for i in range(1000):
+    batch = mnist.train.next_batch(50)
+    train_step.run(session=sess, feed_dict={_X: batch[0], _Y: batch[1]})
+
+correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(_Y, 1))
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+print sess.run(accuracy, feed_dict={_X: mnist.test.images, _Y: mnist.test.labels})
+
+lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=128)
+print (lstm_cell.state_size)
+print (lstm_cell.output_size)
+
+saver = tf.train.Saver()
+model_path = "./session/SoftMaxmodel.ckpt"
+save_path = saver.save(sess, model_path)
+
+sesstest = tf.Session()
+saver.restore(sesstest, model_path)
+print sesstest.run(accuracy, feed_dict={_X: mnist.test.images, _Y: mnist.test.labels})
+
